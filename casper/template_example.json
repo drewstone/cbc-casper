@@ -1,0 +1,13 @@
+{
+  "protocol": "concurrent",
+  "setup": {
+    "validators": {"0": 1},
+    "starting_outputs": [123, 1234, 12345],
+    "initial_estimates": {"0": [123]},
+    "select_outputs": "random",
+    "create_outputs": "random"
+  },
+  "execution": {
+    "execution_string": "M0-A M1-B"
+  }
+}

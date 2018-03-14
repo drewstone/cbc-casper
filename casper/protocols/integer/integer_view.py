@@ -1,11 +1,11 @@
 """The integer view module extends a view for integer data structures """
 from casper.safety_oracles.clique_oracle import CliqueOracle
 from casper.abstract_view import AbstractView
-import casper.protocols.integer.integer_estimator as estimator
 
 
 class IntegerView(AbstractView):
     """A view class for integer values that also keeps track of a last_finalized_estimate"""
+
     def __init__(self, messages=None, first_message=None):
         super().__init__(messages)
 
@@ -13,9 +13,17 @@ class IntegerView(AbstractView):
 
     def estimate(self):
         """Returns the current forkchoice in this view"""
-        return estimator.get_estimate_from_latest_messages(
-            self.latest_messages
-        )
+        sorted_bets = sorted(self.latest_messages.values(),
+                             key=lambda bet: bet.estimate)
+        half_seen_weight = sum(v.weight for v in self.latest_messages) / 2.0
+
+        assert half_seen_weight > 0
+
+        total_estimate_weight = 0
+        for bet in sorted_bets:
+            total_estimate_weight += bet.sender.weight
+            if total_estimate_weight >= half_seen_weight:
+                return bet.estimate
 
     def update_safe_estimates(self, validator_set):
         """Checks safety on most recent created by this view"""

@@ -15,35 +15,31 @@ from casper.protocols.order.order_protocol import OrderProtocol
 from casper.protocols.concurrent.concurrent_protocol import ConcurrentProtocol
 from casper.validator_set import ValidatorSet
 
-MESSAGE_MODES = ['rand', 'rrob', 'full', 'nofinal']
-NETWORKS = ['no-delay', 'step', 'constant', 'linear', 'gaussian']
-PROTOCOLS = ['blockchain', 'binary', 'integer', 'order', 'concurrent']
+MESSAGE_MODES = ["rand", "rrob", "full", "nofinal"]
+
+NETWORKS = {
+    "no-delay": NoDelayNetwork,
+    "constant": ConstantDelayNetwork,
+    "step": StepNetwork,
+    "linear": LinearDelayNetwork,
+    "gaussian": GaussianDelayNetwork,
+}
+
+PROTOCOLS = {
+    "blockchain": BlockchainProtocol,
+    "binary": BinaryProtocol,
+    "order": OrderProtocol,
+    "integer": IntegerProtocol,
+    "concurrent": ConcurrentProtocol,
+}
 
 
 def select_network(network):
-    if network == 'no-delay':
-        return NoDelayNetwork
-    if network == 'constant':
-        return ConstantDelayNetwork
-    if network == 'step':
-        return StepNetwork
-    if network == 'linear':
-        return LinearDelayNetwork
-    if network == 'gaussian':
-        return GaussianDelayNetwork
+    return NETWORKS[network]
 
 
 def select_protocol(protocol):
-    if protocol == 'blockchain':
-        return BlockchainProtocol
-    if protocol == 'binary':
-        return BinaryProtocol
-    if protocol == 'order':
-        return OrderProtocol
-    if protocol == 'integer':
-        return IntegerProtocol
-    if protocol == 'concurrent':
-        return ConcurrentProtocol
+    return PROTOCOLS[protocol]
 
 
 def message_maker(mode):

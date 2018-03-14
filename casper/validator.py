@@ -5,7 +5,7 @@ from casper.protocols.blockchain.blockchain_protocol import BlockchainProtocol
 
 class Validator(object):
     """A validator has a view from which it generates new messages and detects finalized blocks."""
-    def __init__(self, name, weight, protocol=BlockchainProtocol, validator_set=None):
+    def __init__(self, name, weight, protocol=BlockchainProtocol, validator_set=None, delay=1):
         if name is None:
             raise ValueError("Validator name must be defined.")
         if not isinstance(weight, numbers.Number):
@@ -17,6 +17,7 @@ class Validator(object):
         self.weight = weight
         self.validator_set = validator_set
         self.protocol = protocol
+        self.delay = delay
 
         self.initial_message = protocol.initial_message(self)
         self.view = protocol.View(set([self.initial_message]), self.initial_message)

@@ -1,11 +1,11 @@
 """The blockchain view module extends a view for blockchain data structures """
 from casper.safety_oracles.clique_oracle import CliqueOracle
 from casper.abstract_view import AbstractView
-import casper.protocols.blockchain.forkchoice as forkchoice
 
 
 class BlockchainView(AbstractView):
     """A view class that also keeps track of a last_finalized_block and children"""
+
     def __init__(self, messages=None, genesis_block=None):
         self.children = dict()
         self.last_finalized_block = genesis_block
@@ -17,11 +17,38 @@ class BlockchainView(AbstractView):
 
     def estimate(self):
         """Returns the current forkchoice in this view"""
-        return forkchoice.get_fork_choice(
-            self.last_finalized_block,
-            self.children,
-            self.latest_messages
-        )
+
+        # Starts from the last_finalized_block and stops when it reaches a tip.
+        scores = dict()
+
+        for validator in self.latest_messages:
+            current_block = self.latest_messages[validator]
+
+            while current_block and current_block != self.last_finalized_block:
+                scores[current_block] = scores.get(
+                    current_block, 0) + validator.weight
+                current_block = current_block.estimate
+
+        best_block = self.last_finalized_block
+        while best_block in self.children:
+            curr_scores = dict()
+            max_score = 0
+            for child in self.children[best_block]:
+                curr_scores[child] = scores.get(child, 0)
+                max_score = max(curr_scores[child], max_score)
+
+            # We don't choose weight 0 children.
+            # Also possible to make non-deterministic decision here.
+            if max_score == 0:
+                break
+
+            max_weight_children = self.get_max_weight_indexes(curr_scores)
+
+            assert len(max_weight_children) == 1, "... there should be no ties!"
+
+            best_block = max_weight_children.pop()
+
+        return best_block
 
     def update_safe_estimates(self, validator_set):
         """Checks safety on messages in views forkchoice, and updates last_finalized_block"""
@@ -61,3 +88,15 @@ class BlockchainView(AbstractView):
         while tip and tip not in self.when_finalized:
             self.when_finalized[tip] = len(self.justified_messages)
             tip = tip.estimate
+
+    def get_max_weight_indexes(self, scores):
+        """Returns the keys that map to the max value in a dict.
+        The max value must be greater than zero."""
+
+        max_score = max(scores.values())
+
+        assert max_score != 0, "max_score of a block should never be zero"
+
+        max_weight_estimates = {e for e in scores if scores[e] == max_score}
+
+        return max_weight_estimates
